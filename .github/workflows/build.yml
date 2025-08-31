@@ -1,8 +1,8 @@
-name: Build Android APK with Buildozer (Debug)
+name: Build Android APK (Final Attempt)
 
 on: [push]
 
-jobs:
+jobs
   build-android:
     runs-on: ubuntu-latest
 
@@ -23,30 +23,26 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+      
+      # --- مرحله کلیدی و جدید ---
+      - name: Forcefully Set Android Environment
+        run: |
+          echo "Finding latest build-tools path..."
+          BUILD_TOOLS_PATH=$(find $ANDROID_SDK_ROOT/build-tools -maxdepth 1 -type d | sort -r | head -n 1)
+          echo "Latest build-tools found at: $BUILD_TOOLS_PATH"
+          
+          echo "Permanently adding Android paths to GITHUB_ENV..."
+          echo "PATH=$ANDROID_SDK_ROOT/platform-tools:$BUILD_TOOLS_PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          
+          echo "Verifying new PATH..."
+          echo "PATH=$ANDROID_SDK_ROOT/platform-tools:$BUILD_TOOLS_PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
 
       - name: Install Buildozer and dependencies
         run: |
           pip install --upgrade pip
           pip install buildozer cython
-
-      # -- مراحل جدید برای اشکال‌زدایی --
-      - name: 🔎 Debug - Show Environment Variables
-        run: |
-          echo "---- JAVA_HOME ----"
-          echo $JAVA_HOME
-          echo "---- ANDROID_HOME ----"
-          echo $ANDROID_HOME
-          echo "---- ANDROID_SDK_ROOT ----"
-          echo $ANDROID_SDK_ROOT
-          echo "---- PATH ----"
-          echo $PATH
-
-      - name: 🔎 Debug - Find aidl
-        run: |
-          echo "Searching for aidl..."
-          find $ANDROID_SDK_ROOT -name "aidl"
-      
-      # ------------------------------------
 
       - name: Run Buildozer
         run: buildozer android debug
