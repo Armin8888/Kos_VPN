@@ -1,4 +1,4 @@
-name: Build Android APK with Buildozer
+name: Build Android APK with Buildozer (Debug)
 
 on: [push]
 
@@ -24,19 +24,36 @@ jobs:
         with:
           python-version: '3.9'
 
-      # مرحله ۱: نصب خود Buildozer و وابستگی‌های آن
       - name: Install Buildozer and dependencies
         run: |
           pip install --upgrade pip
           pip install buildozer cython
 
-      # مرحله ۲: اجرای مستقیم دستور بیلد
+      # -- مراحل جدید برای اشکال‌زدایی --
+      - name: 🔎 Debug - Show Environment Variables
+        run: |
+          echo "---- JAVA_HOME ----"
+          echo $JAVA_HOME
+          echo "---- ANDROID_HOME ----"
+          echo $ANDROID_HOME
+          echo "---- ANDROID_SDK_ROOT ----"
+          echo $ANDROID_SDK_ROOT
+          echo "---- PATH ----"
+          echo $PATH
+
+      - name: 🔎 Debug - Find aidl
+        run: |
+          echo "Searching for aidl..."
+          find $ANDROID_SDK_ROOT -name "aidl"
+      
+      # ------------------------------------
+
       - name: Run Buildozer
         run: buildozer android debug
 
-      # مرحله ۳: آپلود فایل APK ساخته شده
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: package
-          path: bin/*.apk # مسیر فایل APK را مستقیم مشخص می‌کنیم
+          path: bin/*.apk
+          if-no-files-found: error
