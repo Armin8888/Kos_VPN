@@ -1,4 +1,4 @@
-name: Build Android APK (Final Version)
+name: Build Android APK (Direct Path Method)
 
 on: [push]
 
@@ -16,35 +16,30 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK and NDK
         uses: android-actions/setup-android@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
-      - name: Forcefully Set Android Environment
-        run: |
-          echo "Finding latest build-tools path..."
-          BUILD_TOOLS_PATH=$(find $ANDROID_SDK_ROOT/build-tools -maxdepth 1 -type d | sort -r | head -n 1)
-          echo "Latest build-tools found at: $BUILD_TOOLS_PATH"
-          
-          echo "Permanently adding Android paths to GITHUB_ENV..."
-          echo "PATH=$ANDROID_SDK_ROOT/platform-tools:$BUILD_TOOLS_PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          
-          echo "Verifying new PATH..."
-          echo "PATH=$ANDROID_SDK_ROOT/platform-tools:$BUILD_TOOLS_PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
 
       - name: Install Buildozer and dependencies
         run: |
           pip install --upgrade pip
           pip install buildozer cython
 
-      - name: Run Buildozer
-        run: buildozer android debug
+      # --- مرحله کلیدی و جدید ---
+      - name: Configure and Run Buildozer
+        run: |
+          echo "Explicitly setting Android SDK and NDK paths for buildozer..."
+          # به buildozer به صورت مستقیم می‌گوییم ابزارها کجا هستند
+          buildozer set android.sdk_path $ANDROID_SDK_ROOT
+          buildozer set android.ndk_path $ANDROID_NDK_HOME
+
+          echo "Running build command..."
+          # حالا دستور بیلد را اجرا می‌کنیم
+          buildozer -v android debug
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
