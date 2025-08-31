@@ -1,4 +1,4 @@
-name: Build Android APK (Direct Path Method)
+name: Build Android APK (Correct Final Version)
 
 on: [push]
 
@@ -29,16 +29,20 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
-      # --- مرحله کلیدی و جدید ---
-      - name: Configure and Run Buildozer
+      # --- مرحله کلیدی و اصلاح شده ---
+      - name: Configure Buildozer and Run Build
         run: |
-          echo "Explicitly setting Android SDK and NDK paths for buildozer..."
-          # به buildozer به صورت مستقیم می‌گوییم ابزارها کجا هستند
-          buildozer set android.sdk_path $ANDROID_SDK_ROOT
-          buildozer set android.ndk_path $ANDROID_NDK_HOME
+          echo "Updating buildozer.spec with correct SDK and NDK paths..."
+          # از دستور sed برای پیدا کردن و جایگزینی مسیرها در فایل spec استفاده می‌کنیم
+          sed -i "s|^#*\(android\.sdk_path\s*=\s*\).*$|\1$ANDROID_SDK_ROOT|" buildozer.spec
+          sed -i "s|^#*\(android\.ndk_path\s*=\s*\).*$|\1$ANDROID_NDK_HOME|" buildozer.spec
+
+          echo "--- Verifying buildozer.spec content ---"
+          # محتوای فایل را نمایش می‌دهیم تا از صحت تغییرات مطمئن شویم
+          cat buildozer.spec
+          echo "----------------------------------------"
 
           echo "Running build command..."
-          # حالا دستور بیلد را اجرا می‌کنیم
           buildozer -v android debug
 
       - name: Upload Artifact
