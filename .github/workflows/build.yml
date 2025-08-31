@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK with Buildozer
 
 on: [push]
 
@@ -24,17 +24,19 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          workdir: .
-          buildozer_version: master
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }} # <-- تغییر نهایی در این بخش اعمال شد
+      # مرحله ۱: نصب خود Buildozer و وابستگی‌های آن
+      - name: Install Buildozer and dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython
 
-      - name: Upload artifacts
+      # مرحله ۲: اجرای مستقیم دستور بیلد
+      - name: Run Buildozer
+        run: buildozer android debug
+
+      # مرحله ۳: آپلود فایل APK ساخته شده
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: package
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk # مسیر فایل APK را مستقیم مشخص می‌کنیم
