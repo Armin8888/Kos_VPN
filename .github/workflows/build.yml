@@ -1,4 +1,4 @@
-name: Build Android APK (Final Fixed Version)
+name: Build Android APK (Final Fixed Version with NDK Fix)
 
 on: [push]
 
@@ -19,9 +19,9 @@ jobs:
       - name: Setup Android SDK and NDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK Packages
+      - name: Install Android SDK Packages (with older NDK)
         run: |
-          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;23.1.7779620"
+          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
 
       - name: Accept SDK Licenses
         run: |
@@ -31,11 +31,19 @@ jobs:
         run: |
           echo "$ANDROID_SDK_ROOT/build-tools/33.0.2" >> $GITHUB_PATH
           echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_PATH
 
-      - name: Debug aidl path
+      - name: Force NDK r25b in ENV
         run: |
-          echo "Checking aidl binary..."
-          find $ANDROID_SDK_ROOT/build-tools -name aidl || echo "aidl not found!"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
+
+      - name: Debug SDK/NDK paths
+        run: |
+          echo "SDK: $ANDROID_SDK_ROOT"
+          echo "NDK: $ANDROID_NDK_HOME"
+          ls -la $ANDROID_SDK_ROOT/ndk
+          ls -la $ANDROID_NDK_HOME
 
       - name: Set up Python
         uses: actions/setup-python@v4
