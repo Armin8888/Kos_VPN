@@ -19,6 +19,10 @@ jobs:
       - name: Setup Android SDK and NDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK Packages
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;23.1.7779620"
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -29,16 +33,13 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
-      # --- مرحله کلیدی و اصلاح شده ---
       - name: Configure Buildozer and Run Build
         run: |
           echo "Updating buildozer.spec with correct SDK and NDK paths..."
-          # از دستور sed برای پیدا کردن و جایگزینی مسیرها در فایل spec استفاده می‌کنیم
           sed -i "s|^#*\(android\.sdk_path\s*=\s*\).*$|\1$ANDROID_SDK_ROOT|" buildozer.spec
           sed -i "s|^#*\(android\.ndk_path\s*=\s*\).*$|\1$ANDROID_NDK_HOME|" buildozer.spec
 
           echo "--- Verifying buildozer.spec content ---"
-          # محتوای فایل را نمایش می‌دهیم تا از صحت تغییرات مطمئن شویم
           cat buildozer.spec
           echo "----------------------------------------"
 
