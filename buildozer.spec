@@ -1,7 +1,7 @@
 [app]
-title = StealthGuard VPN
-package.name = stealthguard
-package.domain = org.example
+title =KOS VPN
+package.name = KOS VPN
+package.domain = t.me/kos_VPN132
 source.dir = .
 version = 1.0
 requirements = python3,kivy==2.3.0,https://github.com/kivymd/KivyMD/archive/master.zip,pillow
