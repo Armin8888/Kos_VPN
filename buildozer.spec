@@ -1,6 +1,6 @@
 [app]
-title =KOS VPN
-package.name = KOS VPN
+title =KOS_VPN
+package.name = KOS_VPN
 package.domain = t.me/kos_VPN132
 source.dir = .
 version = 1.0
