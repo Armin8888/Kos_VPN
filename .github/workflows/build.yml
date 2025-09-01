@@ -1,4 +1,4 @@
-name: Build Android APK (Final Correct Version)
+name: Build Android APK (Auto-Correcting Version)
 
 on:
   push:
@@ -14,32 +14,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17, Python 3.10 and dependencies
+      - name: Set up JDK 17 and Python 3.10
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk git zip unzip build-essential libstdc++6 autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtcl8.6 libsqlite3-dev libssl-dev libgdbm-dev libbz2-dev libreadline-dev libffi-dev liblzma-dev
+          sudo apt-get install -y git zip unzip build-essential autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtcl8.6 libsqlite3-dev libssl-dev libgdbm-dev libbz2-dev libreadline-dev libffi-dev liblzma-dev
           python -m pip install --upgrade pip
           pip install buildozer cython
 
       - name: Setup Android SDK and NDK
         uses: android-actions/setup-android@v3
 
-      - name: Configure Buildozer and Run Build
+      - name: Correct and Prepare buildozer.spec File
         run: |
-          echo "Updating buildozer.spec with correct SDK and NDK paths..."
-          # از دستور sed برای پیدا کردن و جایگزینی مسیرها در فایل spec استفاده می‌کنیم
-          # این کار تضمین می‌کند که buildozer از SDK و NDK نصب شده توسط ما استفاده کند
-          sed -i "s|^#*\(android\.sdk_path\s*=\s*\).*$|android.sdk_path = $ANDROID_SDK_ROOT|" buildozer.spec
-          sed -i "s|^#*\(android\.ndk_path\s*=\s*\).*$|android.ndk_path = $ANDROID_NDK_HOME|" buildozer.spec
+          echo "Correcting buildozer.spec..."
+          # 1. اصلاح دامنه پکیج (حذف / و استفاده از فرمت استاندارد)
+          sed -i "s|^package\.domain\s*=\s*.*$|package.domain = org.kosvpn|" buildozer.spec
+          
+          # 2. اصلاح نام پکیج (تبدیل به حروف کوچک)
+          sed -i "s|^package\.name\s*=\s*.*$|package.name = kosvpn|" buildozer.spec
+          
+          # 3. اصلاح و تکمیل نیازمندی‌ها (اضافه کردن hostopenssl)
+          sed -i "s|^requirements\s*=\s*.*$|requirements = python3,kivy==2.3.0,https://github.com/kivymd/KivyMD/archive/master.zip,pillow,hostopenssl,openssl|" buildozer.spec
 
-          echo "--- Verifying buildozer.spec content ---"
-          # محتوای فایل را نمایش می‌دهیم تا از صحت تغییرات مطمئن شویم
+          echo "--- Verifying buildozer.spec content after corrections ---"
           cat buildozer.spec
-          echo "----------------------------------------"
+          echo "--------------------------------------------------------"
 
-          echo "Running build command..."
-          # دستور بیلد را با جزئیات کامل لاگ اجرا می‌کنیم
-          buildozer -v android debug
+      - name: Build with Buildozer
+        run: buildozer -v android debug
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -47,3 +58,4 @@ jobs:
           name: Kos_VPN-APK
           path: bin/*.apk
           if-no-files-found: error
+          
