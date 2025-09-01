@@ -28,30 +28,30 @@ jobs:
 
       - name: Set up Android SDK and NDK
         run: |
-          # Create SDK directories and download command-line tools
+          # ساخت پوشه‌ها و دانلود ابزارهای خط فرمان اندروید
           mkdir -p $HOME/android-sdk/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O $HOME/tools.zip
           unzip -q $HOME/tools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-          # Set environment variables for all subsequent steps
+          # تنظیم متغیرهای محیطی برای تمام مراحل بعدی (روش صحیح)
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
           
-          # Accept licenses and install required packages
+          # پذیرش لایسنس‌ها و نصب بسته‌های مورد نیاز (شامل NDK)
           yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
           $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "platform-tools" "build-tools;33.0.2" "ndk;25.2.9519653"
           
-          # Add the just-installed build-tools to the PATH for all subsequent steps
+          # اضافه کردن پوشه build-tools به مسیرهای سیستم برای تمام مراحل بعدی
           echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
           
-      - name: Configure and Build APK with Buildozer
+      - name: Build APK with Buildozer
         run: |
-          # Clean previous build artifacts, if any
+          # پاک کردن فایل‌های بیلد قبلی
           buildozer android clean || true
           
-          # Run the build
+          # اجرای دستور بیلد با جزئیات کامل
           buildozer -v android debug
 
       - name: Upload APK
