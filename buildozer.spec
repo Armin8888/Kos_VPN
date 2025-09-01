@@ -4,7 +4,7 @@ package.name = KOS_VPN
 package.domain = t.me/kos_VPN132
 source.dir = .
 version = 1.0
-requirements = python3,kivy==2.3.0,https://github.com/kivymd/KivyMD/archive/master.zip,pillow
+requirements = python3,kivy==2.3.0,https://github.com/kivymd/KivyMD/archive/master.zip,pillow,openssl
 orientation = portrait
 icon.filename = %(source.dir)s/logo.png
 
