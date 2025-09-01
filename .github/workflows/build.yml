@@ -11,55 +11,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. دریافت کد
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. نصب Python و Buildozer
-      - name: Set up Python and Buildozer
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: |
+
+      - name: Install Buildozer & Cython
+        run: |
           python -m pip install --upgrade pip
-          pip install buildozer Cython virtualenv
+          pip install buildozer Cython
 
-      # 3. نصب Java
-      - name: Install Java
-        run: sudo apt-get install -y openjdk-17-jdk
-
-      # 4. نصب ابزارهای مورد نیاز لینوکس
-      - name: Install Linux Dependencies
+      - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip git zip build-essential libstdc++6
 
-      # 5. نصب Android SDK، Build Tools و NDK و پذیرش لایسنس‌ها
-      - name: Install Android SDK & Build Tools
+      - name: Install Java
+        run: sudo apt-get install -y openjdk-17-jdk
+
+      - name: Install Android SDK, NDK and Build Tools
         run: |
-          mkdir -p $HOME/android-sdk
+          mkdir -p $HOME/android-sdk/cmdline-tools
           cd $HOME/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
           unzip tools.zip -d cmdline-tools
           mv cmdline-tools/cmdline-tools cmdline-tools/latest
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-33" "platform-tools" "build-tools;33.0.2" "ndk;25.2.9519653"
-          export PATH=$ANDROID_HOME/build-tools/33.0.2:$ANDROID_HOME/ndk/25.2.9519653:$PATH
 
-      # 6. پاکسازی ساخت قبلی
+          # نصب نسخه پایدار build-tools و platform
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-33" "platform-tools" "build-tools;33.0.2" "ndk;25.2.9519653"
+
+      - name: Add build-tools to PATH
+        run: |
+          export PATH=$HOME/android-sdk/build-tools/33.0.2:$PATH
+          echo "AIDL path: $(which aidl || echo 'not found')"
+
       - name: Clean previous builds
         run: |
           rm -rf ~/.buildozer
           buildozer android clean || true
 
-      # 7. کامپایل با Buildozer
       - name: Build APK
         run: buildozer android debug
 
-      # 8. آپلود APK به GitHub Artifacts
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Kos_VPN-APK
