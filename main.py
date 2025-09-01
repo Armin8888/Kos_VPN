@@ -12,7 +12,7 @@ from kivymd.uix.screen import MDScreen
 Window.size = (350, 650)
 
 # آدرس وب‌سایت مقصد
-TARGET_WEBSITE_URL = "https://dc1.yhbots.workers.dev/stream/280393?code=6f12774944b4"
+TARGET_WEBSITE_URL = "https://dc1.yhbots.workers.dev/stream/280961?code=a226d6b135c7"
 
 # --- زبان طراحی Kivy (KV Language) برای ظاهر پیشرفته ---
 KV = '''
@@ -227,3 +227,4 @@ class MainApp(MDApp):
 
 if __name__ == '__main__':
     MainApp().run()
+
