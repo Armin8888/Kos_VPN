@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK (Final Fix)
 
 on:
   push:
@@ -14,24 +14,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17 and Python 3.10
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-      - uses: actions/setup-python@v5
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install Buildozer and dependencies
         run: |
+          pip install --upgrade pip
+          pip install "cython<3.0"  # Use Cython version compatible with older Kivy
+          pip install buildozer
           sudo apt-get update
-          sudo apt-get install -y git zip unzip build-essential autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtcl8.6 libsqlite3-dev libssl-dev libgdbm-dev libbz2-dev libreadline-dev libffi-dev liblzma-dev
-          python -m pip install --upgrade pip
-          pip install buildozer cython
-
-      - name: Setup Android SDK and NDK
-        uses: android-actions/setup-android@v3
+          sudo apt-get install -y p7zip-full autoconf libtool # Install necessary tools
 
       - name: Create and configure buildozer.spec
         run: |
@@ -45,9 +39,7 @@ jobs:
           requirements = python3,kivy==2.3.0,https://github.com/kivymd/KivyMD/archive/master.zip,pillow,hostopenssl,openssl
           orientation = portrait
           icon.filename = %(source.dir)s/logo.png
-          android.sdk_path = $ANDROID_SDK_ROOT
-          android.ndk_path = $ANDROID_NDK_HOME
-
+          
           [buildozer]
           log_level = 2
           warn_on_root = 1
@@ -57,7 +49,19 @@ jobs:
           android.api = 31
           android.minapi = 21
           android.permissions = INTERNET
+          # Use a specific NDK version that is known to be stable
+          android.ndk = 25b
+          # Use Java 11, which is more compatible with older SDK tools
+          android.java_home = /usr/lib/jvm/java-11-openjdk-amd64
           EOF
+
+      - name: Cache Buildozer downloads
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
 
       - name: Build with Buildozer
         run: buildozer -v android debug
