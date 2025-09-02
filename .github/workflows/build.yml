@@ -1,4 +1,4 @@
-name: Build Android APK (Total Control)
+name: Build Android APK (Final Fix)
 
 on:
   push:
@@ -22,42 +22,41 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y p7zip-full autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtcl8.6 libsqlite3-dev libssl-dev libgdbm-dev libbz2-dev libreadline-dev libffi-dev liblzma-dev
+          sudo apt-get install -y openjdk-17-jdk git zip unzip p7zip-full autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtcl8.6 libsqlite3-dev libssl-dev libgdbm-dev libbz2-dev libreadline-dev libffi-dev liblzma-dev
           python -m pip install --upgrade pip
           pip install "cython<3.0" buildozer
 
-      - name: Manually Set Up Android SDK
+      - name: Manually Set Up Android SDK and NDK
         run: |
-          # دانلود نسخه مشخص و پایدار ابزارهای خط فرمان
+          # دانلود و آماده‌سازی SDK
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O $HOME/cmdline-tools.zip
           mkdir -p $HOME/android-sdk/cmdline-tools
           unzip -q $HOME/cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
-          # تنظیم متغیرهای محیطی به روش صحیح و ماندگار
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          # --- بخش کلیدی اصلاح شده ---
+          # ۱. مسیر را برای دستورات همین مرحله آپدیت می‌کنیم
+          export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
+          
+          # ۲. مسیر را برای مراحل بعدی در workflow ماندگار می‌کنیم
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          # ---------------------------
 
-          # پذیرش تمام لایسنس‌ها به صورت خودکار
+          # حالا که مسیر صحیح است، دستورات sdkmanager را اجرا می‌کنیم
           yes | sdkmanager --licenses > /dev/null
-
-          # نصب بسته‌های ضروری با نسخه‌های مشخص و پایدار
           sdkmanager "build-tools;33.0.2" "platforms;android-31" "platform-tools"
           
-          # اضافه کردن مسیر build-tools به PATH به روش صحیح و ماندگار
+          # مسیر build-tools را هم برای مراحل بعدی ماندگار می‌کنیم
           echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
-          
-      - name: Manually Set Up Android NDK
-        run: |
-          # دانلود نسخه NDK توصیه شده توسط Buildozer
+
+          # دانلود و آماده‌سازی NDK
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O $HOME/ndk.zip
           unzip -q $HOME/ndk.zip -d $HOME/
-          
-          # تنظیم متغیر محیطی NDK به روش صحیح و ماندگار
           echo "ANDROID_NDK_HOME=$HOME/android-ndk-r25b" >> $GITHUB_ENV
 
-      - name: Create buildozer.spec from scratch
+      - name: Create buildozer.spec
         run: |
           cat <<EOF > buildozer.spec
           [app]
@@ -70,10 +69,6 @@ jobs:
           orientation = portrait
           icon.filename = %(source.dir)s/logo.png
           
-          # مسیرهای SDK و NDK را مستقیماً به Buildozer می‌دهیم
-          android.sdk_path = /home/runner/android-sdk
-          android.ndk_path = /home/runner/android-ndk-r25b
-
           [buildozer]
           log_level = 2
           warn_on_root = 1
@@ -83,7 +78,8 @@ jobs:
           android.api = 31
           android.minapi = 21
           android.permissions = INTERNET
-          android.ndk = 25b
+          android.ndk_path = /home/runner/android-ndk-r25b
+          android.sdk_path = /home/runner/android-sdk
           EOF
 
       - name: Build with Buildozer
