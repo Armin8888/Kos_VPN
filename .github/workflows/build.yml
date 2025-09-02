@@ -1,4 +1,4 @@
-name: Build Android APK (Final Fix)
+name: Build Android APK (Total Control)
 
 on:
   push:
@@ -19,15 +19,45 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Buildozer and dependencies
+      - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install "cython<3.0"  # Use Cython version compatible with older Kivy
-          pip install buildozer
           sudo apt-get update
-          sudo apt-get install -y p7zip-full autoconf libtool # Install necessary tools
+          sudo apt-get install -y p7zip-full autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtcl8.6 libsqlite3-dev libssl-dev libgdbm-dev libbz2-dev libreadline-dev libffi-dev liblzma-dev
+          python -m pip install --upgrade pip
+          pip install "cython<3.0" buildozer
 
-      - name: Create and configure buildozer.spec
+      - name: Manually Set Up Android SDK
+        run: |
+          # دانلود نسخه مشخص و پایدار ابزارهای خط فرمان
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O $HOME/cmdline-tools.zip
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          unzip -q $HOME/cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+
+          # تنظیم متغیرهای محیطی به روش صحیح و ماندگار
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+
+          # پذیرش تمام لایسنس‌ها به صورت خودکار
+          yes | sdkmanager --licenses > /dev/null
+
+          # نصب بسته‌های ضروری با نسخه‌های مشخص و پایدار
+          sdkmanager "build-tools;33.0.2" "platforms;android-31" "platform-tools"
+          
+          # اضافه کردن مسیر build-tools به PATH به روش صحیح و ماندگار
+          echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
+          
+      - name: Manually Set Up Android NDK
+        run: |
+          # دانلود نسخه NDK توصیه شده توسط Buildozer
+          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O $HOME/ndk.zip
+          unzip -q $HOME/ndk.zip -d $HOME/
+          
+          # تنظیم متغیر محیطی NDK به روش صحیح و ماندگار
+          echo "ANDROID_NDK_HOME=$HOME/android-ndk-r25b" >> $GITHUB_ENV
+
+      - name: Create buildozer.spec from scratch
         run: |
           cat <<EOF > buildozer.spec
           [app]
@@ -40,6 +70,10 @@ jobs:
           orientation = portrait
           icon.filename = %(source.dir)s/logo.png
           
+          # مسیرهای SDK و NDK را مستقیماً به Buildozer می‌دهیم
+          android.sdk_path = /home/runner/android-sdk
+          android.ndk_path = /home/runner/android-ndk-r25b
+
           [buildozer]
           log_level = 2
           warn_on_root = 1
@@ -49,19 +83,8 @@ jobs:
           android.api = 31
           android.minapi = 21
           android.permissions = INTERNET
-          # Use a specific NDK version that is known to be stable
           android.ndk = 25b
-          # Use Java 11, which is more compatible with older SDK tools
-          android.java_home = /usr/lib/jvm/java-11-openjdk-amd64
           EOF
-
-      - name: Cache Buildozer downloads
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
 
       - name: Build with Buildozer
         run: buildozer -v android debug
